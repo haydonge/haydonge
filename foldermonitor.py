@@ -13,9 +13,9 @@ from threading import Thread
 import shutil
 import watchdog.observers as observers  # 2
 import watchdog.events as events  # 2
-from fileinput import FileInput
+
 from configparser import ConfigParser
-from tkinter import messagebox, Toplevel, Label, Tk, Button
+from tkinter import Toplevel, Label  # messagebox,button, Tk,
 
 cfg = ConfigParser()
 cfg.read(r'C:\config\config.ini', encoding="utf-8")
@@ -28,7 +28,7 @@ error_folder = cfg.get('folder', 'error_folder')
 prename = cfg.get('folder', 'prefix_iden')
 Prefix_iden = prename.split(",")
 serial_pre = ""
-# print (Prefix_iden)
+
 
 logger = logging.getLogger(__name__)
 # SENTINEL = None
@@ -49,9 +49,9 @@ def gci(filepath):
     return all_file
 
 
-all_file1 = gci(source_folder)
-for i in all_file1:
-    os.remove(i)
+# all_file1 = gci(source_folder)
+# for i in all_file1:
+#    os.remove(i)
 
 window = tk.Tk()  # root =tk()
 window.title('序列号监控 - 0.7')
@@ -62,7 +62,7 @@ canvas = tk.Canvas(window, height=350, width=550)
 "#Status information"
 status_x = tk.StringVar()
 status_x.set('等待输入条码')
-Status_show = tk.Label(window, textvariable=status_x, font=("黑体", 14)).place(x=60, y=80)
+tk.Label(window, textvariable=status_x, font=("黑体", 14)).place(x=60, y=80)
 
 tk.Label(window, text="请输入条码：").place(x=60, y=130)
 tk.Label(window, text="使用机器扫条码时，保持输入框为空，点击开始监控").place(x=60, y=180)
@@ -71,19 +71,11 @@ tk.Label(window, text="使用外部扫码枪时，扫描条码后，自动开始
 observer = observers.Observer()
 
 
-def filecopy(src, dst):
-    Thread(target=shutil.copy, args=[src, dst]).start()
-
-
-def filedelete(src):
-    os.remove(src)
-
-
-def renew_path_name(filepath, SN):
+def renew_path_name(filepath, serial_number):
     file_break_name = os.path.split(filepath)
     file_temp_name = file_break_name[1]
     p3 = file_temp_name.find("_")
-    change_file_name = SN + file_temp_name[p3:]
+    change_file_name = serial_number + file_temp_name[p3:]
     new_name = file_break_name[0] + "\\" + change_file_name
     # print (new_name)
     return new_name
@@ -98,17 +90,18 @@ class MyEventHandler(events.FileSystemEventHandler):
         self.queue = queue
 
 
-def Start_test(event):
+def start_test(event):
     #  print("开始监控")
     global observer
     status_x.set(serial_x.get() + ' 文件监控中')
+    pre_serial = ""
     for i in Prefix_iden:
-        if (serial_x.get().find(i) != -1):
-            serial_pre = i
+        if serial_x.get().find(i) != -1:
+            pre_serial = i
             break
         else:
-            serial_pre = ""
-    if ((serial_pre != "") and len(serial_x.get()) == 11) or serial_x.get() == "":
+            pre_serial = ""
+    if ((pre_serial != "") and len(serial_x.get()) == 11) or serial_x.get() == "":
         btn_stop.place(x=160, y=230)
         btn_start.place_forget()
         Input_serial.configure(state='readonly')
@@ -121,7 +114,7 @@ def Start_test(event):
         status_x.set("请输入正确序列号")
 
 
-def Stop_test(event):
+def stop_test(event):
     btn_stop.place_forget()  # 防止没有开始线程就停止
     if (observer != []):
         observer.stop()
@@ -134,7 +127,7 @@ def Stop_test(event):
         pass
 
 
-def Stop_return(observer):
+def stop_return(observer):
     btn_stop.place_forget()  # 防止没有开始线程就停止
     if (observer != []):
         observer.stop()
@@ -173,13 +166,13 @@ def pop_always_on_top(msg='dd'):  # This will be on top of any other window
     msg_window.attributes('-topmost', True)
     msg_window.geometry('300x200')
 
-    msg_label = Label(msg_window, text=msg).place(x=50, y=50)
+    Label(msg_window, text=msg).place(x=50, y=50)
 
     btn_start2 = tk.Button(msg_window, text='再次投递', command=msg_window.destroy)
     # btn_start2.bind('<Button-1>',msg_window.destroy)
     btn_start2.place(x=50, y=130)
 
-    btn_stop2 = tk.Button(msg_window, text='转入不良', command=lambda: Stop_return)
+    btn_stop2 = tk.Button(msg_window, text='转入不良', command=lambda: stop_return)
     # btn_stop2.bind('<Button-1>',msg_window.destroy)
     btn_stop2.place(x=150, y=130)
     # msg_window.destroy
@@ -198,7 +191,7 @@ def process(queue):
         with open(file, 'a+') as f:
             f.write(n1 + ' ' + s1 + '\n')  # 加\n换行显示
             f.close()
-        if (event.key)[0] == "created":  # (event.key)[0] == "created"
+        if event.key[0] == "created":  # (event.key)[0] == "created"
             # if tk.messagebox.askyesno('提示', '要把文件进行比较操作吗'):
             with open(event.src_path, mode='rb+') as f:
                 while True:
@@ -251,11 +244,11 @@ def process(queue):
                                 f.write(rest)  # 还原余下内容
                                 f.close()
                                 try:
-                                    Newname_in_test = event.src_path
+                                    newname_in_test = event.src_path
                                     chakai = os.path.split(event.src_path)
                                     pos = chakai[1].find("_")
                                     new_temp_filename = chakai[0] + "\\" + Input_serial.get() + chakai[1][pos:]
-                                    os.rename(Newname_in_test, new_temp_filename)
+                                    os.rename(newname_in_test, new_temp_filename)
                                     backup_name = backup_folder + "\\" + os.path.split(new_temp_filename)[1]
                                     shutil.copyfile(new_temp_filename, backup_name)
                                 except(FileNotFoundError, FileExistsError):
@@ -265,7 +258,7 @@ def process(queue):
                                     os.remove(new_temp_filename)
 
                                 finally:
-                                    Stop_return(observer)  # 回到初始画面
+                                    stop_return(observer)  # 回到初始画面
                                     break
         # else:
         # print("转移到ERROR")
@@ -276,11 +269,11 @@ def process(queue):
 
 
 btn_start = tk.Button(window, text='开始监控文件夹')
-btn_start.bind('<Button-1>', Start_test)
+btn_start.bind('<Button-1>', start_test)
 btn_start.place(x=60, y=230)
 
 btn_stop = tk.Button(window, text='停止监控文件夹')
-btn_stop.bind('<Button-1>', Stop_test)
+btn_stop.bind('<Button-1>', stop_test)
 btn_stop.place(x=160, y=230)
 btn_stop.place_forget()
 
@@ -295,7 +288,7 @@ serial_x = tk.StringVar()
 serial_x.set('')  # 初始无条码
 Input_serial = tk.Entry(window, textvariable=serial_x)
 Input_serial.place(x=160, y=130)
-Input_serial.bind("<Return>", Start_test)
+Input_serial.bind("<Return>", start_test)
 Input_serial.focus()
 
 if __name__ == '__main__':
